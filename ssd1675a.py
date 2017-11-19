@@ -73,6 +73,7 @@ class SSD1675A:
             time.sleep_ms(10)
 
     def _init_ssd1675a(self):
+        self.reset()
         self.write(0x74, b'\x54') # Set Analog Block Control
         self.write(0x7E, b'\x3B') # Set Digital Block Control (Note! There was an error in spi_demo.c, cmd was 75)
         self.write(0x01, b'\x27\x01\x00') # Set MUX as 296
