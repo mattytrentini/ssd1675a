@@ -31,7 +31,6 @@ eink = ssd1675a.SSD1675A(spi=SPI(1,
                          cs=Pin(4, Pin.OUT),
                          dc=Pin(16, Pin.OUT),
                          busy=Pin(17, Pin.IN))
-eink.reset()
 eink.rect(20, 20, 100, 100, 1)
 eink.show()
 ```
