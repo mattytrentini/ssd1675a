@@ -7,9 +7,11 @@ but the intent is to ultimately work for any SSD1675a-powered display.
 
 import framebuf
 import time
+import ubinascii
+
 
 class SSD1675A:
-    def __init__(self, spi, cs, dc, busy, width=296, height=128):
+    def __init__(self, spi, cs_pin, dc_pin, busy_pin, reset_pin, width=296, height=128):
         self.width = width
         self.height = height
         self.pages = self.height // 8
@@ -35,15 +37,15 @@ class SSD1675A:
 
         # Set up the GPIO Pins
         #self.rate = 10 * 1024 * 1024
-        dc.init(dc.OUT, value=0)
-        #res.init(res.OUT, value=0)
-        cs.init(cs.OUT, value=1)
-        busy.init(busy.IN)
+        dc_pin.init(dc_pin.OUT, value=0)
+        cs_pin.init(cs_pin.OUT, value=1)
+        busy_pin.init(busy_pin.IN)
+        reset_pin.init(reset_pin.OUT, value=0)
         self.spi = spi
-        self.dc = dc
-        #self.res = res
-        self.cs = cs
-        self.busy = busy
+        self.dc = dc_pin
+        self.cs = cs_pin
+        self.busy = busy_pin
+        self.reset = reset_pin
 
         self._init_ssd1675a()
 
@@ -64,8 +66,10 @@ class SSD1675A:
         self.cs(1)
 
     def write(self, cmd, data=None):
+        print(hex(cmd))
         self.write_cmd(cmd)
         if data:
+            print(ubinascii.hexlify(data))
             self.write_data(data)
 
     def _wait_busy(self):
@@ -73,6 +77,8 @@ class SSD1675A:
             time.sleep_ms(10)
 
     def _init_ssd1675a(self):
+        self.hw_reset()
+        self.sw_reset()
         self.write(0x74, b'\x54') # Set Analog Block Control
         self.write(0x7E, b'\x3B') # Set Digital Block Control (Note! There was an error in spi_demo.c, cmd was 75)
         self.write(0x01, b'\x27\x01\x00') # Set MUX as 296
@@ -104,6 +110,13 @@ class SSD1675A:
         self.write(0x4E, bytearray([x])) # Set RAM x address count
         self.write(0x4F, bytearray([y, y>>8])) # Set RAM y address count
 
+    def clear(self):
+        self.set_xy_window()
+        self.set_xy_counter(0, 0)
+        self.write(0x24, b'\xFF' * 4736)
+        self.write(0x20) # Update display
+        self._wait_busy()
+
     def show(self):
         self.set_xy_window(0, 0x0F, 0, 0x127)
         self.set_xy_counter(0, 0)
@@ -112,6 +125,13 @@ class SSD1675A:
         self.write(0x20) # Update display
         self._wait_busy()
 
-    def reset(self):
+    def sw_reset(self):
         self.write(0x12) # SWRESET
         self._wait_busy()
+
+    def hw_reset(self):
+        self.reset.value(0)
+        time.sleep_ms(200)
+        self.reset.value(1)
+        time.sleep_ms(200)
+
