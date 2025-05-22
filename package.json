@@ -1,0 +1,7 @@
+{
+  "urls": [
+    ["ssd1675a.py", "github:mattytrentini/ssd1675a/ssd1675a.py"]
+  ],
+  "version": "1.0.0",
+  "deps": []
+}
